@@ -1,9 +1,8 @@
-// src/components/layout/Navbar.tsx
 "use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Feather, BookOpen, X } from "lucide-react";
+import { Feather, X } from "lucide-react";
 import { useFilters } from "@/hooks/useFilters";
 import { useState } from "react";
 
@@ -32,11 +31,11 @@ export default function Navbar() {
           flex items-center justify-between gap-3 sm:gap-4
         "
       >
-        {/* Brand + Title */}
+        {/* Brand */}
         <Link
           href="/"
-          className="group inline-flex items-center gap-2 rounded-xl px-1.5 py-1"
           aria-label="Go to home"
+          className="group inline-flex items-center gap-2 rounded-xl px-1.5 py-1"
         >
           <span
             className="
@@ -60,9 +59,10 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Right side: Links + Author filter */}
+        {/* Right side: icons + author search */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* GitHub */}
+
+          {/* --- GitHub Button (REAL SVG LOGO) --- */}
           <a
             href="https://github.com/montasssar"
             target="_blank"
@@ -76,11 +76,31 @@ export default function Navbar() {
               transition
             "
           >
-            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-70" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              className="h-4 w-4 opacity-90"
+              fill="currentColor"
+            >
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 
+              7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49 
+              -2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+              -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82
+              .72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+              -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+              -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82 
+              .64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 
+              1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 
+              2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75 
+              -3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 
+              1.93-.01 2.19 0 .21.15.46.55.38A8.012 8.012 
+              0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+
             <span className="hidden sm:inline">GitHub</span>
           </a>
 
-          {/* Open Library */}
+          {/* --- OpenLibrary Button (REAL SVG LOGO) --- */}
           <a
             href="https://openlibrary.org/"
             target="_blank"
@@ -94,11 +114,21 @@ export default function Navbar() {
               transition
             "
           >
-            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-70" />
+            {/* OpenLibrary minimal book logo (custom SVG) */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="h-4 w-4 opacity-90"
+            >
+              <path d="M3 4v16l9-2 9 2V4l-9 2-9-2zm2 2.3l7 1.6 
+              7-1.6v11.4l-7-1.6-7 1.6V6.3z" />
+            </svg>
+
             <span className="hidden sm:inline">Open Library</span>
           </a>
 
-          {/* Author search with Clear (X) button */}
+          {/* Author Search */}
           <div className="relative">
             <input
               value={f.author}
@@ -119,7 +149,7 @@ export default function Navbar() {
             {f.author && (
               <button
                 onClick={() => f.setAuthor("")}
-                aria-label="Clear author input"
+                aria-label="Clear author"
                 className={`
                   absolute right-2 top-1/2 -translate-y-1/2
                   p-0.5 rounded-full
@@ -138,7 +168,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Subtle underline */}
       <div className="h-px w-full bg-linear-to-r from-transparent via-stone-300/70 to-transparent" />
     </motion.header>
   );
