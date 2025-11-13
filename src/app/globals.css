@@ -1,0 +1,7 @@
+/* Tailwind v4 entrypoint */
+@import "tailwindcss";
+
+/* Base tweaks */
+html, body { height: 100%; }
+:root { --bg: 255 255 255; }
+body { background: rgb(var(--bg)); }

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "briefreads",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:webpack": "next dev --turbo=false",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "ingest:quotable": "node scripts/ingest/quotable.cjs --limit 50000 --shard 5000 --out src/lib/quotes_shards",
+    "convert:quotes": "node scripts/convert-to-jsonl-gz.cjs data/quotes-big.json",
+    "dataset:merge": "node scripts/normalize-merge.cjs",
+    "dataset:build": "pnpm run dataset:merge && pnpm run convert:quotes",
+    "dataset:hf": "python scripts/fetch_hf_build.py"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.552.0",
+    "next": "16.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "packageManager": "pnpm@10.18.3+sha512.bbd16e6d7286fd7e01f6b3c0b3c932cda2965c06a908328f74663f10a9aea51f1129eea615134bf992831b009eabe167ecb7008b597f40ff9bc75946aadfb08d"
+}
