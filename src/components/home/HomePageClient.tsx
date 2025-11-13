@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { useFilters } from "@/hooks/useFilters";
 import { useQuotesApi } from "@/hooks/useQuotesApi";
 import FilterBar from "@/components/filters/FilterBar";
@@ -114,110 +115,125 @@ export function HomePageClient() {
       )}
 
       {/* 📝 Quotes Grid */}
-      <section aria-label="Quotes list">
-        <div
-          className="
-            grid gap-4 sm:gap-5
-            grid-cols-1
-            sm:grid-cols-2
-            xl:grid-cols-3
-          "
-        >
-          {items.map((q, i) => {
-            const cardId = `${q.author}-${q.text.slice(0, 24)}-${i}`;
-            const isLong = q.text.length > 240;
-            const isOpen = expanded[cardId] === true;
+      {items.length > 0 && (
+        <section aria-label="Quotes list">
+          <div
+            className="
+              grid gap-4 sm:gap-5
+              grid-cols-1
+              sm:grid-cols-2
+              xl:grid-cols-3
+            "
+          >
+            {items.map((q, i) => {
+              const cardId = `${q.author}-${q.text.slice(0, 24)}-${i}`;
+              const isLong = q.text.length > 240;
+              const isOpen = expanded[cardId] === true;
 
-            return (
-              <article
-                key={cardId}
-                className="
-                  group
-                  rounded-2xl border border-stone-200/80
-                  bg-[rgba(250,247,241,.92)]
-                  p-4 sm:p-5
-                  flex flex-col
-                  shadow-[0_8px_18px_rgba(15,23,42,0.04)]
-                  hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]
-                  hover:-translate-y-0.5
-                  transition-all duration-200
-                "
-              >
-                <p
+              return (
+                <motion.article
+                  key={cardId}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-20% 0px" }}
+                  transition={{ duration: 0.2, delay: i * 0.015 }}
                   className="
-                    font-serif text-[0.98rem] sm:text-[1.05rem]
-                    leading-relaxed text-stone-800
+                    group
+                    rounded-2xl border border-stone-200/80
+                    bg-[rgba(250,247,241,.92)]
+                    p-4 sm:p-5
+                    flex flex-col
+                    shadow-[0_8px_18px_rgba(15,23,42,0.04)]
+                    hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]
+                    hover:-translate-y-0.5
+                    transition-all duration-200
                   "
                 >
-                  {isLong && !isOpen ? (
-                    <>
-                      {q.text.slice(0, 240)}…{" "}
-                      <button
-                        type="button"
-                        onClick={() => toggleExpanded(cardId)}
-                        className="
-                          align-baseline text-[11px]
-                          underline underline-offset-2
-                          opacity-80 hover:opacity-100
-                          focus:outline-none focus-visible:ring-2
-                          focus-visible:ring-stone-400 rounded-sm
-                        "
-                        aria-expanded={isOpen}
-                        aria-controls={`${cardId}-full`}
-                      >
-                        Read more
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span id={`${cardId}-full`}>{q.text}</span>
-                      {isLong && (
-                        <>
-                          {" "}
-                          <button
-                            type="button"
-                            onClick={() => toggleExpanded(cardId)}
-                            className="
-                              align-baseline text-[11px]
-                              underline underline-offset-2
-                              opacity-80 hover:opacity-100
-                              focus:outline-none focus-visible:ring-2
-                              focus-visible:ring-stone-400 rounded-sm
-                            "
-                            aria-expanded={isOpen}
-                            aria-controls={`${cardId}-full`}
-                          >
-                            Show less
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
-                </p>
+                  <p
+                    className="
+                      font-serif text-[0.98rem] sm:text-[1.05rem]
+                      leading-relaxed text-stone-800
+                    "
+                  >
+                    {isLong && !isOpen ? (
+                      <>
+                        {q.text.slice(0, 240)}…{" "}
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(cardId)}
+                          className="
+                            align-baseline text-[11px]
+                            underline underline-offset-2
+                            opacity-80 hover:opacity-100
+                            focus:outline-none focus-visible:ring-2
+                            focus-visible:ring-stone-400 rounded-sm
+                          "
+                          aria-expanded={isOpen}
+                          aria-controls={`${cardId}-full`}
+                        >
+                          Read more
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span id={`${cardId}-full`}>{q.text}</span>
+                        {isLong && (
+                          <>
+                            {" "}
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(cardId)}
+                              className="
+                                align-baseline text-[11px]
+                                underline underline-offset-2
+                                opacity-80 hover:opacity-100
+                                focus:outline-none focus-visible:ring-2
+                                focus-visible:ring-stone-400 rounded-sm
+                              "
+                              aria-expanded={isOpen}
+                              aria-controls={`${cardId}-full`}
+                            >
+                              Show less
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </p>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-xs sm:text-sm font-serif opacity-80">
-                    — {q.author}
-                  </span>
-                  {q.tags?.slice(0, 4).map((t) => (
-                    <span
-                      key={t}
-                      className="
-                        text-[10px] sm:text-[11px]
-                        px-2 py-0.5 rounded-full
-                        border border-stone-300
-                        bg-white/80 font-serif
-                      "
-                    >
-                      {t}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs sm:text-sm font-serif opacity-80">
+                      — {q.author}
                     </span>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+                    {q.tags?.slice(0, 4).map((t) => {
+                      const isActive = f.tags.includes(t);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => f.toggleTag(t)}
+                          className={`
+                            text-[10px] sm:text-[11px]
+                            px-2 py-0.5 rounded-full font-serif border
+                            transition
+                            ${
+                              isActive
+                                ? "border-stone-700 bg-stone-800 text-amber-50"
+                                : "border-stone-300 bg-white/80 text-stone-800 hover:border-stone-400"
+                            }
+                          `}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ⏳ Loading / End */}
       <div ref={sentinelRef} className="h-10" />
