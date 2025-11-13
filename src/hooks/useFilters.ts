@@ -1,3 +1,4 @@
+// src/hooks/useFilters.ts
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -7,9 +8,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 export type MatchMode = "any" | "all";
 
 export interface FiltersState {
-  q: string;       // free-text across text/author/tags
-  author: string;  // author only (wired in Navbar)
-  tags: string[];  // selected tag slugs
+  q: string;      // free-text across text/author/tags
+  author: string; // author only (wired in Navbar)
+  tags: string[]; // selected tag slugs
   mode: MatchMode; // "any" | "all"
 }
 
@@ -18,7 +19,7 @@ function parseFromURL(sp: URLSearchParams): FiltersState {
   const author = sp.get("author") ?? "";
   const tags = (sp.get("tags") ?? "")
     .split(",")
-    .map(t => t.trim())
+    .map((t) => t.trim())
     .filter(Boolean);
   const mode = (sp.get("mode") as MatchMode) === "all" ? "all" : "any";
   return { q, author, tags, mode };
@@ -56,7 +57,9 @@ export function useFilters(initial?: Partial<FiltersState>) {
   const [mode, setMode] = useState<MatchMode>(seeded.mode);
 
   const toggleTag = (t: string) =>
-    setTags(prev => (prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]));
+    setTags((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+    );
 
   const clear = () => {
     setQ("");
@@ -99,14 +102,14 @@ export function useFilters(initial?: Partial<FiltersState>) {
 
     const fromUrl = parseFromURL(searchParams);
     // Only update pieces that actually differ to avoid cursor jumps
-    setQ(prev => (prev !== fromUrl.q ? fromUrl.q : prev));
-    setAuthor(prev => (prev !== fromUrl.author ? fromUrl.author : prev));
-    setTags(prev => {
+    setQ((prev) => (prev !== fromUrl.q ? fromUrl.q : prev));
+    setAuthor((prev) => (prev !== fromUrl.author ? fromUrl.author : prev));
+    setTags((prev) => {
       const a = prev.join(",");
       const b = fromUrl.tags.join(",");
       return a !== b ? fromUrl.tags : prev;
     });
-    setMode(prev => (prev !== fromUrl.mode ? fromUrl.mode : prev));
+    setMode((prev) => (prev !== fromUrl.mode ? fromUrl.mode : prev));
   }, [searchParams]);
 
   return {
