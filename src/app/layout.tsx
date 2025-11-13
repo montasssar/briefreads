@@ -7,11 +7,18 @@ import "./globals.css";
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-<body className="bg-gradient-to-b from-[#fdf7ec] to-[#f1ebdd] text-stone-900">
+      <body
+        className="
+          min-h-screen
+          bg-linear-to-b from-[#fdf7ec] to-[#f1ebdd]
+          text-stone-900
+          antialiased
+        "
+      >
         <Suspense fallback={null}>
           <Navbar />
         </Suspense>
-        {children}
+        <main className="pb-10">{children}</main>
       </body>
     </html>
   );

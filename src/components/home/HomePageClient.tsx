@@ -30,12 +30,10 @@ export function HomePageClient() {
     seed,
   });
 
-  // Expanded quotes state
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleExpanded = (id: string) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // Infinite scroll
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = sentinelRef.current;
@@ -51,106 +49,182 @@ export function HomePageClient() {
   }, [loadMore]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
+    <main
+      className="
+        mx-auto max-w-6xl
+        px-3 sm:px-4
+        pt-4 sm:pt-6 md:pt-8
+        space-y-8 sm:space-y-10 md:space-y-12
+      "
+    >
       {/* 🖋️ Header */}
-      <section className="text-center space-y-3">
-        <h1 className="text-4xl sm:text-5xl font-serif font-semibold text-stone-800 tracking-tight">
+      <section className="text-center space-y-3 sm:space-y-4">
+        <h1
+          className="
+            text-3xl sm:text-4xl md:text-5xl
+            font-serif font-semibold
+            text-stone-800 tracking-tight
+          "
+        >
           BriefReads
         </h1>
-        <p className="max-w-2xl mx-auto text-base sm:text-lg text-stone-600 font-serif leading-relaxed italic">
+        <p
+          className="
+            max-w-2xl mx-auto
+            text-sm sm:text-base md:text-lg
+            text-stone-700 font-serif
+            leading-relaxed italic
+          "
+        >
           Crafted with care by{" "}
-          <span className="font-medium text-stone-800">Montassar Benneji</span>{" "}
-          for <span className="font-medium text-stone-800">Thoughts lovers</span>.{" "}
+          <span className="font-medium text-stone-900">Montassar Benneji</span>{" "}
+          for <span className="font-medium text-stone-900">Thoughts lovers</span>.
           Choose your favourite author and read their mind, or explore your own
           reflection by selecting a personal tag.
         </p>
       </section>
 
       {/* 🎚️ Filter */}
-      <FilterBar
-        q={f.q}
-        author={f.author}
-        tags={f.tags}
-        mode={f.mode}
-        onQ={f.setQ}
-        onAuthor={f.setAuthor}
-        onToggleTag={f.toggleTag}
-        onMode={f.setMode}
-        onClear={f.clear}
-      />
+      <section
+        className="
+          rounded-2xl border border-stone-200/80
+          bg-[rgba(255,253,248,0.9)]
+          px-3 sm:px-4 py-3 sm:py-4
+          shadow-[0_12px_24px_rgba(15,23,42,0.04)]
+        "
+      >
+        <FilterBar
+          q={f.q}
+          author={f.author}
+          tags={f.tags}
+          mode={f.mode}
+          onQ={f.setQ}
+          onAuthor={f.setAuthor}
+          onToggleTag={f.toggleTag}
+          onMode={f.setMode}
+          onClear={f.clear}
+        />
+      </section>
 
       {/* ⚠️ Error */}
       {error && (
-        <p className="text-sm text-red-600 font-serif">Error: {error}</p>
+        <p className="text-sm text-red-600 font-serif text-center">
+          Error: {error}
+        </p>
       )}
 
       {/* 📝 Quotes Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((q, i) => {
-          const cardId = `${q.author}-${q.text.slice(0, 24)}-${i}`;
-          const isLong = q.text.length > 240;
-          const isOpen = expanded[cardId] === true;
+      <section aria-label="Quotes list">
+        <div
+          className="
+            grid gap-4 sm:gap-5
+            grid-cols-1
+            sm:grid-cols-2
+            xl:grid-cols-3
+          "
+        >
+          {items.map((q, i) => {
+            const cardId = `${q.author}-${q.text.slice(0, 24)}-${i}`;
+            const isLong = q.text.length > 240;
+            const isOpen = expanded[cardId] === true;
 
-          return (
-            <article
-              key={cardId}
-              className="rounded-2xl border border-stone-300/60 bg-[rgba(250,247,241,.6)] p-4 flex flex-col hover:shadow-md transition-shadow duration-300"
-            >
-              <p className="font-serif text-[1.05rem] leading-relaxed text-stone-800">
-                {isLong && !isOpen ? (
-                  <>
-                    {q.text.slice(0, 240)}…{" "}
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(cardId)}
-                      className="align-baseline text-xs underline underline-offset-2 opacity-80 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-sm"
-                      aria-expanded={isOpen}
-                      aria-controls={`${cardId}-full`}
-                    >
-                      Read more
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span id={`${cardId}-full`}>{q.text}</span>
-                    {isLong && (
-                      <>
-                        {" "}
-                        <button
-                          type="button"
-                          onClick={() => toggleExpanded(cardId)}
-                          className="align-baseline text-xs underline underline-offset-2 opacity-80 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 rounded-sm"
-                          aria-expanded={isOpen}
-                          aria-controls={`${cardId}-full`}
-                        >
-                          Show less
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </p>
+            return (
+              <article
+                key={cardId}
+                className="
+                  group
+                  rounded-2xl border border-stone-200/80
+                  bg-[rgba(250,247,241,.92)]
+                  p-4 sm:p-5
+                  flex flex-col
+                  shadow-[0_8px_18px_rgba(15,23,42,0.04)]
+                  hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]
+                  hover:-translate-y-0.5
+                  transition-all duration-200
+                "
+              >
+                <p
+                  className="
+                    font-serif text-[0.98rem] sm:text-[1.05rem]
+                    leading-relaxed text-stone-800
+                  "
+                >
+                  {isLong && !isOpen ? (
+                    <>
+                      {q.text.slice(0, 240)}…{" "}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(cardId)}
+                        className="
+                          align-baseline text-[11px]
+                          underline underline-offset-2
+                          opacity-80 hover:opacity-100
+                          focus:outline-none focus-visible:ring-2
+                          focus-visible:ring-stone-400 rounded-sm
+                        "
+                        aria-expanded={isOpen}
+                        aria-controls={`${cardId}-full`}
+                      >
+                        Read more
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span id={`${cardId}-full`}>{q.text}</span>
+                      {isLong && (
+                        <>
+                          {" "}
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(cardId)}
+                            className="
+                              align-baseline text-[11px]
+                              underline underline-offset-2
+                              opacity-80 hover:opacity-100
+                              focus:outline-none focus-visible:ring-2
+                              focus-visible:ring-stone-400 rounded-sm
+                            "
+                            aria-expanded={isOpen}
+                            aria-controls={`${cardId}-full`}
+                          >
+                            Show less
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </p>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-sm font-serif opacity-80">— {q.author}</span>
-                {q.tags?.slice(0, 4).map((t) => (
-                  <span
-                    key={t}
-                    className="text-[11px] px-2 py-0.5 rounded-full border border-stone-300 bg-white/70 font-serif"
-                  >
-                    {t}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs sm:text-sm font-serif opacity-80">
+                    — {q.author}
                   </span>
-                ))}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+                  {q.tags?.slice(0, 4).map((t) => (
+                    <span
+                      key={t}
+                      className="
+                        text-[10px] sm:text-[11px]
+                        px-2 py-0.5 rounded-full
+                        border border-stone-300
+                        bg-white/80 font-serif
+                      "
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
 
       {/* ⏳ Loading / End */}
       <div ref={sentinelRef} className="h-10" />
       {loading && (
-        <p className="text-center text-sm font-serif opacity-70">Loading…</p>
+        <p className="text-center text-sm font-serif opacity-70">
+          Loading…
+        </p>
       )}
       {!hasMore && !loading && items.length > 0 && (
         <p className="text-center text-sm font-serif opacity-60">— end —</p>

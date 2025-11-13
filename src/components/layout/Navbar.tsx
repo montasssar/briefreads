@@ -13,34 +13,68 @@ export default function Navbar() {
 
   return (
     <motion.header
-      initial={{ y: -10, opacity: 0 }}
+      initial={{ y: -8, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="sticky top-0 z-50 border-b supports-backdrop-filter:bg-white/55 backdrop-blur"
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="
+        sticky top-0 z-50
+        border-b border-stone-200/80
+        bg-[rgba(253,247,236,0.9)]
+        backdrop-blur
+        shadow-[0_6px_12px_rgba(15,23,42,0.06)]
+      "
     >
-      <div className="mx-auto max-w-6xl h-16 px-4 flex items-center justify-between gap-4">
+      <div
+        className="
+          mx-auto max-w-6xl
+          h-14 sm:h-16
+          px-3 sm:px-4
+          flex items-center justify-between gap-3 sm:gap-4
+        "
+      >
         {/* Brand + Title */}
         <Link
           href="/"
-          className="group inline-flex items-center gap-2 rounded-xl px-2 py-1"
+          className="group inline-flex items-center gap-2 rounded-xl px-1.5 py-1"
           aria-label="Go to home"
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-stone-300 bg-[rgba(250,247,241,.85)] group-hover:bg-[rgba(250,247,241,.95)] transition">
+          <span
+            className="
+              inline-flex h-8 w-8 items-center justify-center
+              rounded-full border border-stone-300
+              bg-[rgba(250,247,241,.95)]
+              group-hover:bg-[rgba(250,247,241,1)]
+              transition
+            "
+          >
             <Feather className="h-4 w-4 text-stone-700" />
           </span>
-          <span className="font-serif text-lg font-semibold tracking-tight">
+          <span
+            className="
+              hidden xs:inline-block
+              font-serif font-semibold tracking-tight
+              text-sm sm:text-base text-stone-800
+            "
+          >
             YOUR WARM HOME OF WORDS
           </span>
         </Link>
 
         {/* Right side: Links + Author filter */}
-        <div className="flex items-center gap-2">
-          {/* Links */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Links (hidden on very small screens) */}
           <a
             href="https://github.com/montasssar"
             target="_blank"
             rel="noreferrer"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/70 px-3 py-1.5 text-sm font-serif opacity-90 hover:opacity-100 hover:bg-white transition"
+            className="
+              hidden md:inline-flex items-center gap-2
+              rounded-full border border-stone-300
+              bg-white/80 px-3 py-1.5
+              text-xs sm:text-sm font-serif
+              opacity-90 hover:opacity-100 hover:bg-white
+              transition
+            "
           >
             <BookOpen className="h-4 w-4 opacity-70" />
             GitHub
@@ -49,7 +83,14 @@ export default function Navbar() {
             href="https://openlibrary.org/"
             target="_blank"
             rel="noreferrer"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white/70 px-3 py-1.5 text-sm font-serif opacity-90 hover:opacity-100 hover:bg-white transition"
+            className="
+              hidden md:inline-flex items-center gap-2
+              rounded-full border border-stone-300
+              bg-white/80 px-3 py-1.5
+              text-xs sm:text-sm font-serif
+              opacity-90 hover:opacity-100 hover:bg-white
+              transition
+            "
           >
             <BookOpen className="h-4 w-4 opacity-70" />
             Open Library
@@ -64,27 +105,39 @@ export default function Navbar() {
               onBlur={() => setFocused(false)}
               placeholder="Author…"
               aria-label="Filter quotes by author"
-              className="w-44 md:w-56 rounded-full border border-stone-300 bg-[rgba(255,255,255,.9)] px-3 pr-8 py-1.5 text-sm font-serif focus:outline-none focus:ring-2 focus:ring-stone-400/40"
+              className="
+                w-32 xs:w-40 md:w-56
+                rounded-full border border-stone-300
+                bg-[rgba(255,255,255,.96)]
+                px-3 pr-8 py-1.5
+                text-xs sm:text-sm font-serif
+                focus:outline-none focus:ring-2 focus:ring-stone-400/40
+              "
             />
             {f.author && (
               <button
                 onClick={() => f.setAuthor("")}
                 aria-label="Clear author input"
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full ${
-                  focused
-                    ? "opacity-100 bg-stone-100 hover:bg-stone-200"
-                    : "opacity-80 hover:opacity-100"
-                } transition`}
+                className={`
+                  absolute right-2 top-1/2 -translate-y-1/2
+                  p-0.5 rounded-full
+                  ${
+                    focused
+                      ? "opacity-100 bg-stone-100 hover:bg-stone-200"
+                      : "opacity-80 hover:opacity-100"
+                  }
+                  transition
+                `}
               >
-                <X className="h-4 w-4 text-stone-600" />
+                <X className="h-3.5 w-3.5 text-stone-600" />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Subtle parchment underline */}
-      <div className="h-px w-full bg-linear-to-r from-transparent via-stone-300/60 to-transparent" />
+      {/* Subtle underline */}
+      <div className="h-px w-full bg-linear-to-r from-transparent via-stone-300/70 to-transparent" />
     </motion.header>
   );
 }
