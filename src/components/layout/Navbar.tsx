@@ -62,38 +62,40 @@ export default function Navbar() {
 
         {/* Right side: Links + Author filter */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Links (hidden on very small screens) */}
+          {/* GitHub */}
           <a
             href="https://github.com/montasssar"
             target="_blank"
             rel="noreferrer"
             className="
-              hidden md:inline-flex items-center gap-2
+              inline-flex items-center gap-1 sm:gap-2
               rounded-full border border-stone-300
-              bg-white/80 px-3 py-1.5
-              text-xs sm:text-sm font-serif
+              bg-white/80 px-2.5 sm:px-3 py-1.5
+              text-[11px] sm:text-sm font-serif
               opacity-90 hover:opacity-100 hover:bg-white
               transition
             "
           >
-            <BookOpen className="h-4 w-4 opacity-70" />
-            GitHub
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-70" />
+            <span className="hidden sm:inline">GitHub</span>
           </a>
+
+          {/* Open Library */}
           <a
             href="https://openlibrary.org/"
             target="_blank"
             rel="noreferrer"
             className="
-              hidden md:inline-flex items-center gap-2
+              inline-flex items-center gap-1 sm:gap-2
               rounded-full border border-stone-300
-              bg-white/80 px-3 py-1.5
-              text-xs sm:text-sm font-serif
+              bg-white/80 px-2.5 sm:px-3 py-1.5
+              text-[11px] sm:text-sm font-serif
               opacity-90 hover:opacity-100 hover:bg-white
               transition
             "
           >
-            <BookOpen className="h-4 w-4 opacity-70" />
-            Open Library
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-70" />
+            <span className="hidden sm:inline">Open Library</span>
           </a>
 
           {/* Author search with Clear (X) button */}
@@ -106,7 +108,7 @@ export default function Navbar() {
               placeholder="Author…"
               aria-label="Filter quotes by author"
               className="
-                w-32 xs:w-40 md:w-56
+                w-28 xs:w-32 sm:w-40 md:w-56
                 rounded-full border border-stone-300
                 bg-[rgba(255,255,255,.96)]
                 px-3 pr-8 py-1.5
