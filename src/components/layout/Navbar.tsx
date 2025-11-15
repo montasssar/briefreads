@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Feather, X, LogIn, LogOut } from "lucide-react";
+import { Feather, X, LogIn, LogOut, Menu } from "lucide-react";
 import { useFilters } from "@/hooks/useFilters";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 
 export default function Navbar() {
   const f = useFilters();
-  const [focused, setFocused] = useState(false);
   const { user, loading, signInWithGoogle, signOutUser } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const userInitial =
     user?.displayName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase();
@@ -64,9 +64,9 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Right side: OpenLibrary + author search + auth */}
+        {/* Right side: OpenLibrary + author search + auth + menu */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* --- OpenLibrary Button (REAL SVG LOGO) --- */}
+          {/* OpenLibrary button */}
           <a
             href="https://openlibrary.org/"
             target="_blank"
@@ -80,7 +80,6 @@ export default function Navbar() {
               transition
             "
           >
-            {/* Minimal book logo */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -89,7 +88,6 @@ export default function Navbar() {
             >
               <path d="M3 4v16l9-2 9 2V4l-9 2-9-2zm2 2.3l7 1.6 7-1.6v11.4l-7-1.6-7 1.6V6.3z" />
             </svg>
-
             <span className="hidden sm:inline">Open Library</span>
           </a>
 
@@ -98,8 +96,6 @@ export default function Navbar() {
             <input
               value={f.author}
               onChange={(e) => f.setAuthor(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
               placeholder="Author…"
               aria-label="Filter quotes by author"
               className="
@@ -115,16 +111,13 @@ export default function Navbar() {
               <button
                 onClick={() => f.setAuthor("")}
                 aria-label="Clear author"
-                className={`
+                className="
                   absolute right-2 top-1/2 -translate-y-1/2
                   p-0.5 rounded-full
-                  ${
-                    focused
-                      ? "opacity-100 bg-stone-100 hover:bg-stone-200"
-                      : "opacity-80 hover:opacity-100"
-                  }
+                  opacity-80 hover:opacity-100
+                  bg-transparent hover:bg-stone-100
                   transition
-                `}
+                "
               >
                 <X className="h-3.5 w-3.5 text-stone-600" />
               </button>
@@ -134,18 +127,41 @@ export default function Navbar() {
           {/* Auth controls */}
           {user ? (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex flex-col items-end leading-tight max-w-[140px]">
+              {/* Text info only on sm+ */}
+              <div className="hidden sm:flex flex-col items-end leading-tight">
                 <span className="text-[10px] font-serif opacity-60">
                   Signed in as
                 </span>
-                <span className="text-[11px] font-serif font-medium truncate">
+                <span className="text-[11px] font-serif font-medium truncate max-w-[130px]">
                   {user.displayName ?? user.email}
                 </span>
               </div>
+
               <div className="inline-flex items-center gap-1">
+                {/* Avatar */}
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-800 text-xs font-semibold text-stone-50 shadow-sm">
                   {userInitial}
                 </span>
+
+                {/* Mobile: icon-only sign out (always visible on small screens) */}
+                <button
+                  type="button"
+                  onClick={signOutUser}
+                  disabled={loading}
+                  aria-label="Sign out"
+                  className="
+                    inline-flex sm:hidden items-center justify-center
+                    h-8 w-8 rounded-full
+                    border border-stone-300
+                    bg-white/80 text-stone-700
+                    hover:bg-white transition
+                    disabled:opacity-60
+                  "
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+
+                {/* Desktop: text button */}
                 <button
                   type="button"
                   onClick={signOutUser}
@@ -183,8 +199,52 @@ export default function Navbar() {
               <span>{loading ? "Connecting…" : "Sign in"}</span>
             </button>
           )}
+
+          {/* Menu icon (About / My Poems / Saved Quotes) */}
+          <button
+            type="button"
+            aria-label="Open navigation menu"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="
+              inline-flex items-center justify-center
+              h-8 w-8 rounded-full
+              border border-stone-300 bg-white/80
+              hover:bg-white transition
+            "
+          >
+            <Menu className="h-4 w-4 text-stone-700" />
+          </button>
         </div>
       </div>
+
+      {/* Dropdown menu */}
+      {menuOpen && (
+        <nav className="border-t border-stone-200/80 bg-[rgba(253,247,236,0.96)] backdrop-blur-sm">
+          <div className="mx-auto max-w-6xl px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+            <Link
+              href="/about"
+              className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
+              onClick={() => setMenuOpen(false)}
+            >
+              About
+            </Link>
+            <Link
+              href="/my-poems"
+              className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
+              onClick={() => setMenuOpen(false)}
+            >
+              My Poems
+            </Link>
+            <Link
+              href="/saved"
+              className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
+              onClick={() => setMenuOpen(false)}
+            >
+              Saved quotes
+            </Link>
+          </div>
+        </nav>
+      )}
 
       <div className="h-px w-full bg-linear-to-r from-transparent via-stone-300/70 to-transparent" />
     </motion.header>
