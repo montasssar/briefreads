@@ -2,13 +2,18 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Feather, X } from "lucide-react";
+import { Feather, X, LogIn, LogOut } from "lucide-react";
 import { useFilters } from "@/hooks/useFilters";
+import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 
 export default function Navbar() {
   const f = useFilters();
   const [focused, setFocused] = useState(false);
+  const { user, loading, signInWithGoogle, signOutUser } = useAuth();
+
+  const userInitial =
+    user?.displayName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase();
 
   return (
     <motion.header
@@ -59,47 +64,8 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Right side: icons + author search */}
+        {/* Right side: OpenLibrary + author search + auth */}
         <div className="flex items-center gap-2 sm:gap-3">
-
-          {/* --- GitHub Button (REAL SVG LOGO) --- */}
-          <a
-            href="https://github.com/montasssar"
-            target="_blank"
-            rel="noreferrer"
-            className="
-              inline-flex items-center gap-1 sm:gap-2
-              rounded-full border border-stone-300
-              bg-white/80 px-2.5 sm:px-3 py-1.5
-              text-[11px] sm:text-sm font-serif
-              opacity-90 hover:opacity-100 hover:bg-white
-              transition
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              className="h-4 w-4 opacity-90"
-              fill="currentColor"
-            >
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 
-              7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49 
-              -2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-              -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82
-              .72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
-              -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
-              -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82 
-              .64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 
-              1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 
-              2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75 
-              -3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 
-              1.93-.01 2.19 0 .21.15.46.55.38A8.012 8.012 
-              0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
-
           {/* --- OpenLibrary Button (REAL SVG LOGO) --- */}
           <a
             href="https://openlibrary.org/"
@@ -114,15 +80,14 @@ export default function Navbar() {
               transition
             "
           >
-            {/* OpenLibrary minimal book logo (custom SVG) */}
+            {/* Minimal book logo */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
               className="h-4 w-4 opacity-90"
             >
-              <path d="M3 4v16l9-2 9 2V4l-9 2-9-2zm2 2.3l7 1.6 
-              7-1.6v11.4l-7-1.6-7 1.6V6.3z" />
+              <path d="M3 4v16l9-2 9 2V4l-9 2-9-2zm2 2.3l7 1.6 7-1.6v11.4l-7-1.6-7 1.6V6.3z" />
             </svg>
 
             <span className="hidden sm:inline">Open Library</span>
@@ -165,6 +130,59 @@ export default function Navbar() {
               </button>
             )}
           </div>
+
+          {/* Auth controls */}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex flex-col items-end leading-tight">
+                <span className="text-[10px] font-serif opacity-60">
+                  Signed in as
+                </span>
+                <span className="text-[11px] font-serif font-medium truncate max-w-[130px]">
+                  {user.displayName ?? user.email}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-800 text-xs font-semibold text-stone-50 shadow-sm">
+                  {userInitial}
+                </span>
+                <button
+                  type="button"
+                  onClick={signOutUser}
+                  disabled={loading}
+                  className="
+                    hidden sm:inline-flex items-center gap-1
+                    rounded-full border border-stone-300
+                    bg-white/80 px-3 py-1
+                    text-[11px] font-serif
+                    hover:bg-white transition
+                    disabled:opacity-60
+                  "
+                >
+                  <LogOut className="h-3 w-3" />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              disabled={loading}
+              className="
+                inline-flex items-center gap-1
+                rounded-full border border-stone-300
+                bg-stone-900 text-stone-50
+                px-3 py-1.5
+                text-[11px] sm:text-sm font-serif
+                shadow-sm hover:bg-stone-800
+                transition disabled:opacity-60
+              "
+            >
+              <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>{loading ? "Connecting…" : "Sign in"}</span>
+            </button>
+          )}
         </div>
       </div>
 

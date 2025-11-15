@@ -1,8 +1,8 @@
-// src/app/layout.tsx
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Navbar from "@/components/layout/Navbar";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,10 +22,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           antialiased
         "
       >
-        <Suspense fallback={null}>
-          <Navbar />
-        </Suspense>
-        <main className="pb-10">{children}</main>
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <Navbar />
+          </Suspense>
+          <main className="pb-10">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
