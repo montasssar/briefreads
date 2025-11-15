@@ -25,8 +25,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <Suspense fallback={null}>
             <Navbar />
+            <main className="pb-10">{children}</main>
           </Suspense>
-          <main className="pb-10">{children}</main>
         </AuthProvider>
       </body>
     </html>

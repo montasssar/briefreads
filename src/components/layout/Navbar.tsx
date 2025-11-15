@@ -72,7 +72,7 @@ export default function Navbar() {
             target="_blank"
             rel="noreferrer"
             className="
-              inline-flex items-center gap-1 sm:gap-2
+              hidden xs:inline-flex items-center gap-1 sm:gap-2
               rounded-full border border-stone-300
               bg-white/80 px-2.5 sm:px-3 py-1.5
               text-[11px] sm:text-sm font-serif
@@ -134,11 +134,11 @@ export default function Navbar() {
           {/* Auth controls */}
           {user ? (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex flex-col items-end leading-tight">
+              <div className="hidden sm:flex flex-col items-end leading-tight max-w-[140px]">
                 <span className="text-[10px] font-serif opacity-60">
                   Signed in as
                 </span>
-                <span className="text-[11px] font-serif font-medium truncate max-w-[130px]">
+                <span className="text-[11px] font-serif font-medium truncate">
                   {user.displayName ?? user.email}
                 </span>
               </div>

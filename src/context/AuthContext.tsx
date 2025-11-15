@@ -1,3 +1,4 @@
+// src/context/AuthContext.tsx
 "use client";
 
 import {
@@ -7,11 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User } from "firebase/auth";
 import {
   onAuthStateChanged,
   signInWithPopup,
   signOut,
+  type User,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebaseClient";
 
@@ -28,16 +29,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen to auth state changes once
+  // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
     });
-    return unsubscribe;
+
+    return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogleHandler = async () => {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signOutUser = async () => {
+  const signOutHandler = async () => {
     setLoading(true);
     try {
       await signOut(auth);
@@ -58,14 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     user,
     loading,
-    signInWithGoogle,
-    signOutUser,
+    signInWithGoogle: signInWithGoogleHandler,
+    signOutUser: signOutHandler,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {
     throw new Error("useAuth must be used within an AuthProvider");
