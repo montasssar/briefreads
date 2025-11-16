@@ -7,8 +7,8 @@ function getUserId(req: NextRequest): string | null {
 }
 
 // GET /api/saved-quotes
-// - if ?text=... → { saved: boolean }
-// - else         → { quotes: SavedQuote[] }
+// - ?text=... → { saved: boolean }
+// - no query  → { quotes: SavedQuote[] }
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) {
@@ -34,8 +34,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ quotes });
   } catch (err) {
     console.error("GET /api/saved-quotes error", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to load saved quotes" },
+      { error: "Failed to load saved quotes", detail: message },
       { status: 500 }
     );
   }
@@ -59,13 +60,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tagsString =
-    Array.isArray(body.tags) && body.tags.length > 0
-      ? body.tags.join(",")
-      : "";
+  const tagsString = Array.isArray(body.tags) ? body.tags.join(",") : null;
 
   try {
-    await prisma.savedQuote.create({
+    const saved = await prisma.savedQuote.create({
       data: {
         userId,
         author: body.author,
@@ -74,17 +72,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ ok: true }, { status: 201 });
+    return NextResponse.json({ saved }, { status: 201 });
   } catch (err) {
     console.error("POST /api/saved-quotes error", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to save quote" },
+      { error: "Failed to save quote", detail: message },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/saved-quotes → unsave quote
+// DELETE /api/saved-quotes → unsave
 export async function DELETE(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) {
@@ -108,10 +107,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("DELETE /api/saved-quotes error", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to remove quote" },
+      { error: "Failed to remove quote", detail: message },
       { status: 500 }
     );
   }
 }
-
