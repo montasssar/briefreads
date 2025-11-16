@@ -229,7 +229,7 @@ export default function Navbar() {
               About
             </Link>
             <Link
-              href="/my-poems"
+              href="/poems"
               className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
               onClick={() => setMenuOpen(false)}
             >

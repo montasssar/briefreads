@@ -1,15 +1,21 @@
-// src/components/home/HomePageClient.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import { useFilters } from "@/hooks/useFilters";
 import { useQuotesApi } from "@/hooks/useQuotesApi";
 import FilterBar from "@/components/filters/FilterBar";
 import ScrollToTopButton from "@/components/layout/ScrollToTopButton";
+import QuoteCard from "@/components/quotes/QuoteCard";
+import type { Quote } from "@/types/quote";
+
+type SavedQuoteRow = {
+  text: string;
+};
 
 export function HomePageClient() {
   const f = useFilters();
+  const { user } = useAuth();
 
   // Stable “randomness per visit”
   const [seed] = useState<number>(() => {
@@ -31,20 +37,125 @@ export function HomePageClient() {
     seed,
   });
 
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const toggleExpanded = (id: string) =>
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  // map: quote.text -> saved?
+  const [savedMap, setSavedMap] = useState<Record<string, boolean>>({});
+
+  // preload saved quotes for logged-in user
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch("/api/saved-quotes", {
+          headers: {
+            "x-user-id": user.uid,
+          },
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const rows: SavedQuoteRow[] = data.quotes ?? [];
+
+        const next: Record<string, boolean> = {};
+        for (const row of rows) {
+          if (row.text) {
+            next[row.text] = true;
+          }
+        }
+        setSavedMap(next);
+      } catch (err) {
+        console.error("Failed to preload saved quotes", err);
+      }
+    })();
+  }, [user]);
+
+  const toggleSave = async (quote: Quote) => {
+    if (!user) {
+      console.warn("Must be signed in to save quotes.");
+      return;
+    }
+
+    const key = quote.text;
+    const currentlySaved = !!savedMap[key];
+
+    const applySaved = (saved: boolean) => {
+      setSavedMap((prev) => {
+        const next = { ...prev };
+        if (saved) {
+          next[key] = true;
+        } else {
+          delete next[key];
+        }
+        return next;
+      });
+    };
+
+    try {
+      if (!currentlySaved) {
+        applySaved(true);
+
+        const res = await fetch("/api/saved-quotes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.uid,
+          },
+          body: JSON.stringify({
+            author: quote.author,
+            text: quote.text,
+            tags: quote.tags ?? [],
+          }),
+        });
+
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          console.error("Failed to save quote", res.status, payload);
+          applySaved(false);
+        }
+      } else {
+        applySaved(false);
+
+        const res = await fetch("/api/saved-quotes", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.uid,
+          },
+          body: JSON.stringify({ text: quote.text }),
+        });
+
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          console.error("Failed to remove saved quote", res.status, payload);
+          applySaved(true);
+        }
+      }
+    } catch (err) {
+      console.error("toggleSave error", err);
+      applySaved(currentlySaved);
+    }
+  };
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
+
     const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) if (e.isIntersecting) loadMore();
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            loadMore();
+          }
+        }
       },
       { rootMargin: "600px 0px" }
     );
+
     io.observe(el);
     return () => io.disconnect();
   }, [loadMore]);
@@ -125,112 +236,17 @@ export function HomePageClient() {
               xl:grid-cols-3
             "
           >
-            {items.map((q, i) => {
-              const cardId = `${q.author}-${q.text.slice(0, 24)}-${i}`;
-              const isLong = q.text.length > 240;
-              const isOpen = expanded[cardId] === true;
-
-              return (
-                <motion.article
-                  key={cardId}
-                  initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-20% 0px" }}
-                  transition={{ duration: 0.2, delay: i * 0.015 }}
-                  className="
-                    group
-                    rounded-2xl border border-stone-200/80
-                    bg-[rgba(250,247,241,.92)]
-                    p-4 sm:p-5
-                    flex flex-col
-                    shadow-[0_8px_18px_rgba(15,23,42,0.04)]
-                    hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]
-                    hover:-translate-y-0.5
-                    transition-all duration-200
-                  "
-                >
-                  <p
-                    className="
-                      font-serif text-[0.98rem] sm:text-[1.05rem]
-                      leading-relaxed text-stone-800
-                    "
-                  >
-                    {isLong && !isOpen ? (
-                      <>
-                        {q.text.slice(0, 240)}…{" "}
-                        <button
-                          type="button"
-                          onClick={() => toggleExpanded(cardId)}
-                          className="
-                            align-baseline text-[11px]
-                            underline underline-offset-2
-                            opacity-80 hover:opacity-100
-                            focus:outline-none focus-visible:ring-2
-                            focus-visible:ring-stone-400 rounded-sm
-                          "
-                          aria-expanded={isOpen}
-                          aria-controls={`${cardId}-full`}
-                        >
-                          Read more
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <span id={`${cardId}-full`}>{q.text}</span>
-                        {isLong && (
-                          <>
-                            {" "}
-                            <button
-                              type="button"
-                              onClick={() => toggleExpanded(cardId)}
-                              className="
-                                align-baseline text-[11px]
-                                underline underline-offset-2
-                                opacity-80 hover:opacity-100
-                                focus:outline-none focus-visible:ring-2
-                                focus-visible:ring-stone-400 rounded-sm
-                              "
-                              aria-expanded={isOpen}
-                              aria-controls={`${cardId}-full`}
-                            >
-                              Show less
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-xs sm:text-sm font-serif opacity-80">
-                      — {q.author}
-                    </span>
-                    {q.tags?.slice(0, 4).map((t) => {
-                      const isActive = f.tags.includes(t);
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => f.toggleTag(t)}
-                          className={`
-                            text-[10px] sm:text-[11px]
-                            px-2 py-0.5 rounded-full font-serif border
-                            transition
-                            ${
-                              isActive
-                                ? "border-stone-700 bg-stone-800 text-amber-50"
-                                : "border-stone-300 bg-white/80 text-stone-800 hover:border-stone-400"
-                            }
-                          `}
-                        >
-                          {t}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </motion.article>
-              );
-            })}
+            {items.map((q, i) => (
+              <QuoteCard
+                key={`${q.author}-${q.text.slice(0, 24)}-${i}`}
+                quote={q}
+                index={i}
+                activeTags={f.tags}
+                onToggleTag={f.toggleTag}
+                isSaved={!!user && !!savedMap[q.text]}
+                onToggleSave={() => toggleSave(q)}
+              />
+            ))}
           </div>
         </section>
       )}
@@ -238,9 +254,7 @@ export function HomePageClient() {
       {/* ⏳ Loading / End */}
       <div ref={sentinelRef} className="h-10" />
       {loading && (
-        <p className="text-center text-sm font-serif opacity-70">
-          Loading…
-        </p>
+        <p className="text-center text-sm font-serif opacity-70">Loading…</p>
       )}
       {!hasMore && !loading && items.length > 0 && (
         <p className="text-center text-sm font-serif opacity-60">— end —</p>
