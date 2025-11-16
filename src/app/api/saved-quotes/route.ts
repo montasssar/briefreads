@@ -6,19 +6,59 @@ function getUserId(req: NextRequest): string | null {
   return userId && userId.trim().length > 0 ? userId : null;
 }
 
+// Shape of errors we might see from Prisma / Postgres
+type ErrorWithCode = Error & {
+  code?: string;
+  errorCode?: string;
+};
+
+// Normalize unknown error → { message, code }
+function normalizeError(err: unknown): { message: string; code: string | null } {
+  if (typeof err === "string") {
+    return { message: err, code: null };
+  }
+
+  if (err && typeof err === "object") {
+    const e = err as ErrorWithCode;
+    const message =
+      e.message || JSON.stringify(err, Object.getOwnPropertyNames(err));
+    const code = e.code ?? e.errorCode ?? null;
+    return { message, code };
+  }
+
+  return { message: "Unknown error", code: null };
+}
+
+/**
+ * Small helper: test DB connection once.
+ * If DATABASE_URL / SSL is wrong, this throws DB_CONNECT_ERROR with details.
+ */
+async function assertDbConnection(): Promise<void> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch (err: unknown) {
+    const { message, code } = normalizeError(err);
+    throw new Error(
+      `DB_CONNECT_ERROR: ${message}${code ? ` (code: ${code})` : ""}`
+    );
+  }
+}
+
 // GET /api/saved-quotes
-// - ?text=... → { saved: boolean }
-// - no query  → { quotes: SavedQuote[] }
+//   ?text=... → { saved: boolean }
+//   none      → { quotes: SavedQuote[] }
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const text = searchParams.get("text");
-
   try {
+    await assertDbConnection();
+
+    const { searchParams } = new URL(req.url);
+    const text = searchParams.get("text");
+
     if (text) {
       const existing = await prisma.savedQuote.findFirst({
         where: { userId, text },
@@ -32,11 +72,15 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ quotes });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("GET /api/saved-quotes error", err);
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const { message, code } = normalizeError(err);
     return NextResponse.json(
-      { error: "Failed to load saved quotes", detail: message },
+      {
+        error: "Failed to load saved quotes",
+        detail: message,
+        code,
+      },
       { status: 500 }
     );
   }
@@ -63,6 +107,8 @@ export async function POST(req: NextRequest) {
   const tagsString = Array.isArray(body.tags) ? body.tags.join(",") : null;
 
   try {
+    await assertDbConnection();
+
     const saved = await prisma.savedQuote.create({
       data: {
         userId,
@@ -73,17 +119,21 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ saved }, { status: 201 });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("POST /api/saved-quotes error", err);
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const { message, code } = normalizeError(err);
     return NextResponse.json(
-      { error: "Failed to save quote", detail: message },
+      {
+        error: "Failed to save quote",
+        detail: message,
+        code,
+      },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/saved-quotes → unsave
+// DELETE /api/saved-quotes → unsave quote
 export async function DELETE(req: NextRequest) {
   const userId = getUserId(req);
   if (!userId) {
@@ -100,16 +150,22 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
+    await assertDbConnection();
+
     await prisma.savedQuote.deleteMany({
       where: { userId, text: body.text },
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("DELETE /api/saved-quotes error", err);
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const { message, code } = normalizeError(err);
     return NextResponse.json(
-      { error: "Failed to remove quote", detail: message },
+      {
+        error: "Failed to remove quote",
+        detail: message,
+        code,
+      },
       { status: 500 }
     );
   }
