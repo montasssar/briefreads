@@ -143,7 +143,7 @@ export default function Navbar() {
                   {userInitial}
                 </span>
 
-                {/* Mobile: icon-only sign out (always visible on small screens) */}
+                {/* Mobile: icon-only sign out */}
                 <button
                   type="button"
                   onClick={signOutUser}
@@ -184,7 +184,6 @@ export default function Navbar() {
             <button
               type="button"
               onClick={signInWithGoogle}
-              disabled={loading}
               className="
                 inline-flex items-center gap-1
                 rounded-full border border-stone-300
@@ -192,11 +191,11 @@ export default function Navbar() {
                 px-3 py-1.5
                 text-[11px] sm:text-sm font-serif
                 shadow-sm hover:bg-stone-800
-                transition disabled:opacity-60
+                transition
               "
             >
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>{loading ? "Connecting…" : "Sign in"}</span>
+              <span>Sign in</span>
             </button>
           )}
 
