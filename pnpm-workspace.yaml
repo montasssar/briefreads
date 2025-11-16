@@ -1,0 +1,9 @@
+packages:
+  - .
+
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "prisma"
+  - "@prisma/engines"
+  - "@firebase/util"
+  - "protobufjs"
