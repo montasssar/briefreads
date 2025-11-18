@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,91 +7,119 @@ import QuoteCard from "@/components/quotes/QuoteCard";
 import type { Quote } from "@/types/quote";
 
 type SavedQuoteRow = {
-  id: number;
-  userId: string;
-  author: string;
+  id: string;
   text: string;
-  tags: string;
-  createdAt: string;
+  author: string;
+  tags: string; // comma-separated in DB
 };
 
+type Status = "idle" | "loading" | "error";
+
 export default function SavedQuotesPage() {
-  const { user, loading } = useAuth();
-  const [savedQuotes, setSavedQuotes] = useState<Quote[]>([]);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const { user } = useAuth();
+  const [rows, setRows] = useState<SavedQuoteRow[]>([]);
+  const [status, setStatus] = useState<Status>("idle");
 
-  // Load saved quotes once the user is known
+  // Load saved quotes whenever the user changes
   useEffect(() => {
-    if (!user) return;
+    // if user logs out → clear list
+    if (!user) {
+      setRows([]);
+      setStatus("idle");
+      return;
+    }
 
-    setStatus("loading");
+    let cancelled = false;
 
-    (async () => {
+    const load = async () => {
+      setStatus("loading");
       try {
-        const res = await fetch("/api/saved-quotes", {
-          headers: {
-            "x-user-id": user.uid,
-          },
-        });
+        const res = await fetch(
+          `/api/saved-quotes?userId=${encodeURIComponent(user.uid)}`
+        );
 
-        if (!res.ok) throw new Error("Failed to load saved quotes");
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          console.error("Failed to load saved quotes", res.status, payload);
+          if (!cancelled) setStatus("error");
+          return;
+        }
 
         const data = await res.json();
-        const rows: SavedQuoteRow[] = data.quotes ?? [];
+        const quotes: SavedQuoteRow[] = data.quotes ?? [];
 
-        const normalized: Quote[] = rows.map((row) => ({
-          author: row.author,
-          text: row.text,
-          tags: row.tags
-            ? row.tags
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean)
-            : [],
-        }));
-
-        setSavedQuotes(normalized);
-        setStatus("idle");
+        if (!cancelled) {
+          setRows(quotes);
+          setStatus("idle");
+        }
       } catch (err) {
-        console.error(err);
-        setStatus("error");
+        console.error("Failed to load saved quotes", err);
+        if (!cancelled) setStatus("error");
       }
-    })();
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  // Unsave from this page: simple & friendly
-  const handleUnsave = async (quote: Quote) => {
-    if (!user) return;
+  // Toggle save/unsave from Saved page (unsave = remove)
+  const handleToggleSave = async (row: SavedQuoteRow) => {
+    if (!user) {
+      console.warn("Must be signed in to modify saved quotes.");
+      return;
+    }
 
-    // Remove from UI right away
-    setSavedQuotes((prev) => prev.filter((q) => q.text !== quote.text));
+    const quote: Quote = {
+      text: row.text,
+      author: row.author,
+      tags: row.tags
+        ? row.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+    };
+
+    // optimistic remove
+    const prevRows = rows;
+    setRows((current) => current.filter((r) => r.id !== row.id));
 
     try {
       const res = await fetch("/api/saved-quotes", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": user.uid,
-        },
-        body: JSON.stringify({ text: quote.text }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          text: quote.text,
+          author: quote.author,
+          tags: quote.tags ?? [],
+        }),
       });
 
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        console.error("Failed to unsave quote", res.status, payload);
+        console.error("Failed to toggle saved quote", res.status, payload);
+        // rollback on failure
+        setRows(prevRows);
       }
     } catch (err) {
-      console.error("handleUnsave error", err);
+      console.error("toggleSave from /saved error", err);
+      setRows(prevRows);
     }
   };
 
-  if (!user && !loading) {
+  // --------- RENDER ---------
+
+  if (!user) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-10">
-        <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-900">
+      <main className="mx-auto max-w-3xl px-4 pt-10 pb-16 text-center">
+        <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-stone-800">
           Saved Quotes
         </h1>
-        <p className="mt-3 text-sm text-stone-700">
+        <p className="mt-4 text-sm sm:text-base text-stone-700">
           Sign in to see the lines you’ve kept close.
         </p>
       </main>
@@ -98,46 +127,68 @@ export default function SavedQuotesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-serif text-2xl font-semibold tracking-tight text-stone-900">
-        Saved Quotes
-      </h1>
+    <main className="mx-auto max-w-4xl px-4 pt-10 pb-16 space-y-6">
+      <header className="text-center space-y-2">
+        <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-stone-800">
+          Saved Quotes
+        </h1>
+        <p className="text-sm sm:text-base text-stone-600">
+          All the words you tapped <span className="font-semibold">Save</span>{" "}
+          on.
+        </p>
+      </header>
 
       {status === "loading" && (
-        <p className="mt-4 text-sm text-stone-600">
-          Collecting your favourite lines…
+        <p className="text-center text-sm text-stone-600 font-serif">
+          Loading your saved lines…
         </p>
       )}
 
       {status === "error" && (
-        <p className="mt-4 text-sm text-rose-600">
-          Couldn’t load your saved quotes. Please try again in a little while.
+        <p className="text-center text-sm text-red-600 font-serif">
+          Couldn’t load saved quotes. Please try again in a moment.
         </p>
       )}
 
-      {status === "idle" && savedQuotes.length === 0 && (
-        <p className="mt-4 text-sm text-stone-600">
-          You don’t have any saved quotes yet.  
-          Tap <span className="font-semibold">Save</span> on a quote you like and it will appear here.
+      {rows.length === 0 && status === "idle" && (
+        <p className="text-center text-sm text-stone-700 font-serif mt-6">
+          You don’t have any saved quotes yet. Tap{" "}
+          <span className="font-semibold">Save</span> on a quote you like and it
+          will appear here.
         </p>
       )}
 
-      <section className="mt-6 space-y-4">
-        {savedQuotes.map((q, i) => (
-          <QuoteCard
-            key={`${q.text}-${i}`}
-            quote={q}
-            index={i}
-            activeTags={[]}
-            onToggleTag={() => {
-              /* no tag filters here */
-            }}
-            isSaved
-            saveLabel="Unsave"            // 👈 clearer on this page
-            onToggleSave={() => handleUnsave(q)}
-          />
-        ))}
-      </section>
+      {rows.length > 0 && (
+        <section
+          aria-label="Saved quotes"
+          className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2"
+        >
+          {rows.map((row, index) => {
+            const quote: Quote = {
+              text: row.text,
+              author: row.author,
+              tags: row.tags
+                ? row.tags
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                : [],
+            };
+
+            return (
+              <QuoteCard
+                key={row.id}
+                quote={quote}
+                index={index}
+                activeTags={[]}
+                onToggleTag={() => {}}
+                isSaved={true}
+                onToggleSave={() => handleToggleSave(row)}
+              />
+            );
+          })}
+        </section>
+      )}
     </main>
   );
 }

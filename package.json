@@ -13,7 +13,11 @@
     "convert:quotes": "node scripts/convert-to-jsonl-gz.cjs data/quotes-big.json",
     "dataset:merge": "node scripts/normalize-merge.cjs",
     "dataset:build": "pnpm run dataset:merge && pnpm run convert:quotes",
-    "dataset:hf": "python scripts/fetch_hf_build.py"
+    "dataset:hf": "python scripts/fetch_hf_build.py",
+
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:migrate:dev": "prisma migrate dev --name init_schema"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -22,7 +26,7 @@
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.552.0",
-    "next": "16.0.1",
+    "next": "16.0.2-canary.21",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "tailwind-merge": "^3.3.1"

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -10,15 +12,18 @@ import QuoteCard from "@/components/quotes/QuoteCard";
 import type { Quote } from "@/types/quote";
 
 type SavedQuoteRow = {
+  id: string;
   text: string;
+  author: string;
+  tags: string;
 };
 
-export function HomePageClient() {
+export default function HomePageClient() {
   const f = useFilters();
   const { user } = useAuth();
 
-  // Stable “randomness per visit”
-  const [seed] = useState<number>(() => {
+  // Stable random seed per visit
+  const [seed] = useState(() => {
     if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
       const b = new Uint32Array(1);
       crypto.getRandomValues(b);
@@ -37,41 +42,43 @@ export function HomePageClient() {
     seed,
   });
 
-  // map: quote.text -> saved?
   const [savedMap, setSavedMap] = useState<Record<string, boolean>>({});
 
-  // preload saved quotes for logged-in user
+  // LOAD SAVED QUOTES WHEN USER LOGS IN/OUT
   useEffect(() => {
     if (!user) {
+      setSavedMap({});
       return;
     }
 
-    (async () => {
+    const load = async () => {
       try {
-        const res = await fetch("/api/saved-quotes", {
-          headers: {
-            "x-user-id": user.uid,
-          },
-        });
+        const res = await fetch(
+          `/api/saved-quotes?userId=${encodeURIComponent(user.uid)}`
+        );
 
-        if (!res.ok) return;
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          console.error("Failed to load saved quotes", res.status, payload);
+          return;
+        }
 
         const data = await res.json();
         const rows: SavedQuoteRow[] = data.quotes ?? [];
 
         const next: Record<string, boolean> = {};
-        for (const row of rows) {
-          if (row.text) {
-            next[row.text] = true;
-          }
-        }
+        for (const q of rows) next[q.text] = true;
+
         setSavedMap(next);
       } catch (err) {
         console.error("Failed to preload saved quotes", err);
       }
-    })();
+    };
+
+    void load();
   }, [user]);
 
+  // SAVE / UNSAVE
   const toggleSave = async (quote: Quote) => {
     if (!user) {
       console.warn("Must be signed in to save quotes.");
@@ -84,54 +91,31 @@ export function HomePageClient() {
     const applySaved = (saved: boolean) => {
       setSavedMap((prev) => {
         const next = { ...prev };
-        if (saved) {
-          next[key] = true;
-        } else {
-          delete next[key];
-        }
+        if (saved) next[key] = true;
+        else delete next[key];
         return next;
       });
     };
 
     try {
-      if (!currentlySaved) {
-        applySaved(true);
+      // optimistic UI
+      applySaved(!currentlySaved);
 
-        const res = await fetch("/api/saved-quotes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": user.uid,
-          },
-          body: JSON.stringify({
-            author: quote.author,
-            text: quote.text,
-            tags: quote.tags ?? [],
-          }),
-        });
+      const res = await fetch("/api/saved-quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          text: quote.text,
+          author: quote.author,
+          tags: quote.tags ?? [],
+        }),
+      });
 
-        if (!res.ok) {
-          const payload = await res.json().catch(() => null);
-          console.error("Failed to save quote", res.status, payload);
-          applySaved(false);
-        }
-      } else {
-        applySaved(false);
-
-        const res = await fetch("/api/saved-quotes", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": user.uid,
-          },
-          body: JSON.stringify({ text: quote.text }),
-        });
-
-        if (!res.ok) {
-          const payload = await res.json().catch(() => null);
-          console.error("Failed to remove saved quote", res.status, payload);
-          applySaved(true);
-        }
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        console.error("Failed to save quote", res.status, payload);
+        applySaved(currentlySaved); // rollback
       }
     } catch (err) {
       console.error("toggleSave error", err);
@@ -139,6 +123,7 @@ export function HomePageClient() {
     }
   };
 
+  // Infinite scroll watcher
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -147,11 +132,7 @@ export function HomePageClient() {
 
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            loadMore();
-          }
-        }
+        if (entries.some((e) => e.isIntersecting)) loadMore();
       },
       { rootMargin: "600px 0px" }
     );
@@ -161,50 +142,23 @@ export function HomePageClient() {
   }, [loadMore]);
 
   return (
-    <main
-      className="
-        mx-auto max-w-6xl
-        px-3 sm:px-4
-        pt-4 sm:pt-6 md:pt-8
-        space-y-8 sm:space-y-10 md:space-y-12
-      "
-    >
-      {/* 🖋️ Header */}
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 pt-4 sm:pt-6 md:pt-8 space-y-8 sm:space-y-10 md:space-y-12">
+
+      {/* Header */}
       <section className="text-center space-y-3 sm:space-y-4">
-        <h1
-          className="
-            text-3xl sm:text-4xl md:text-5xl
-            font-serif font-semibold
-            text-stone-800 tracking-tight
-          "
-        >
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-semibold text-stone-800 tracking-tight">
           BriefReads
         </h1>
-        <p
-          className="
-            max-w-2xl mx-auto
-            text-sm sm:text-base md:text-lg
-            text-stone-700 font-serif
-            leading-relaxed italic
-          "
-        >
-          Crafted with care by{" "}
-          <span className="font-medium text-stone-900">Montassar Benneji</span>{" "}
-          for <span className="font-medium text-stone-900">Thoughts lovers</span>.
+
+      
+        <p className="max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-stone-700 font-serif leading-relaxed italic">
           Choose your favourite author and read their mind, or explore your own
           reflection by selecting a personal tag.
         </p>
       </section>
 
-      {/* 🎚️ Filter */}
-      <section
-        className="
-          rounded-2xl border border-stone-200/80
-          bg-[rgba(255,253,248,0.9)]
-          px-3 sm:px-4 py-3 sm:py-4
-          shadow-[0_12px_24px_rgba(15,23,42,0.04)]
-        "
-      >
+      {/* Filters */}
+      <section className="rounded-2xl border border-stone-200/80 bg-[rgba(255,253,248,0.9)] px-3 sm:px-4 py-3 sm:py-4 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
         <FilterBar
           q={f.q}
           author={f.author}
@@ -218,24 +172,16 @@ export function HomePageClient() {
         />
       </section>
 
-      {/* ⚠️ Error */}
       {error && (
         <p className="text-sm text-red-600 font-serif text-center">
           Error: {error}
         </p>
       )}
 
-      {/* 📝 Quotes Grid */}
+      {/* Feed */}
       {items.length > 0 && (
-        <section aria-label="Quotes list">
-          <div
-            className="
-              grid gap-4 sm:gap-5
-              grid-cols-1
-              sm:grid-cols-2
-              xl:grid-cols-3
-            "
-          >
+        <section>
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((q, i) => (
               <QuoteCard
                 key={`${q.author}-${q.text.slice(0, 24)}-${i}`}
@@ -251,7 +197,6 @@ export function HomePageClient() {
         </section>
       )}
 
-      {/* ⏳ Loading / End */}
       <div ref={sentinelRef} className="h-10" />
       {loading && (
         <p className="text-center text-sm font-serif opacity-70">Loading…</p>
@@ -260,7 +205,6 @@ export function HomePageClient() {
         <p className="text-center text-sm font-serif opacity-60">— end —</p>
       )}
 
-      {/* 🡅 Scroll-to-top button */}
       <ScrollToTopButton />
     </main>
   );

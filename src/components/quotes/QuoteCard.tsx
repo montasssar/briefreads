@@ -9,151 +9,127 @@ interface QuoteCardProps {
   index?: number;
   activeTags: string[];
   onToggleTag: (tag: string) => void;
-  isSaved?: boolean;
-  onToggleSave?: () => void;
-  saveLabel?: string; // 👈 new (optional)
+  isSaved: boolean;
+  onToggleSave: () => void;
 }
 
-function QuoteCard({
+const MAX_CHARS = 220;
+
+export default function QuoteCard({
   quote,
   index = 0,
   activeTags,
   onToggleTag,
   isSaved,
   onToggleSave,
-  saveLabel,
 }: QuoteCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
   const delay = Math.min(0.02 * index, 0.4);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const toggleExpanded = () => setIsOpen((prev) => !prev);
+  const isLong = (quote.text ?? "").length > MAX_CHARS;
 
-  const isLong = quote.text.length > 240;
-  const cardId = `${quote.author}-${quote.text.slice(0, 24)}-${index}`;
+  const displayText =
+    expanded || !isLong
+      ? quote.text
+      : `${quote.text.slice(0, MAX_CHARS).trimEnd()}…`;
 
-  // Default labels if no custom label is given
-  const buttonLabel =
-    saveLabel ?? (isSaved ? "Saved" : "Save");
+  const handleToggleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleSave();
+  };
+
+  const handleToggleTag = (e: React.MouseEvent, tag: string) => {
+    e.stopPropagation();
+    onToggleTag(tag);
+  };
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-20% 0px" }}
-      transition={{ duration: 0.2, delay }}
+      initial={{ y: 8, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.35, delay }}
       className="
-        group
+        group relative h-full
         rounded-2xl border border-stone-200/80
-        bg-[rgba(250,247,241,.92)]
+        bg-[radial-gradient(circle_at_top,#fffbf5,#f5efe6)]
         p-4 sm:p-5
-        flex flex-col
-        shadow-[0_8px_18px_rgba(15,23,42,0.04)]
-        hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]
-        hover:-translate-y-0.5
-        transition-all duration-200
+        shadow-[0_12px_30px_rgba(15,23,42,0.06)]
+        hover:shadow-[0_16px_40px_rgba(15,23,42,0.11)]
+        transition-shadow
       "
     >
-      <p
-        className="
-          font-serif text-[0.98rem] sm:text-[1.05rem]
-          leading-relaxed text-stone-800
-        "
+      {/* Save button */}
+      <button
+        type="button"
+        onClick={handleToggleSave}
+        className={`
+          absolute right-3 top-3
+          inline-flex h-8 w-8 items-center justify-center
+          rounded-full border text-xs font-medium
+          transition
+          ${
+            isSaved
+              ? "bg-amber-500 border-amber-500 text-white shadow-sm"
+              : "bg-white/80 border-stone-200 text-stone-600 hover:bg-amber-50"
+          }
+        `}
+        aria-pressed={isSaved}
+        aria-label={isSaved ? "Unsave quote" : "Save quote"}
       >
-        {isLong && !isOpen ? (
-          <>
-            {quote.text.slice(0, 240)}…{" "}
-            <button
-              type="button"
-              onClick={toggleExpanded}
-              className="
-                align-baseline text-[11px]
-                underline underline-offset-2
-                opacity-80 hover:opacity-100
-                focus:outline-none focus-visible:ring-2
-                focus-visible:ring-stone-400 rounded-sm
-              "
-              aria-expanded={isOpen}
-              aria-controls={`${cardId}-full`}
-            >
-              Read more
-            </button>
-          </>
-        ) : (
-          <>
-            <span id={`${cardId}-full`}>{quote.text}</span>
-            {isLong && (
-              <>
-                {" "}
-                <button
-                  type="button"
-                  onClick={toggleExpanded}
-                  className="
-                    align-baseline text-[11px]
-                    underline underline-offset-2
-                    opacity-80 hover:opacity-100
-                    focus:outline-none focus-visible:ring-2
-                    focus-visible:ring-stone-400 rounded-sm
-                  "
-                  aria-expanded={isOpen}
-                  aria-controls={`${cardId}-full`}
-                >
-                  Show less
-                </button>
-              </>
-            )}
-          </>
-        )}
+        {isSaved ? "★" : "☆"}
+      </button>
+
+      {/* Quote text */}
+      <p className="text-[0.98rem] sm:text-[1.02rem] leading-relaxed font-serif text-stone-900">
+        <span className="text-lg mr-0.5 align-top text-stone-400">“</span>
+        {displayText}
+        <span className="text-lg ml-0.5 align-bottom text-stone-400">”</span>
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs sm:text-sm font-serif opacity-80">
-          — {quote.author}
+      {/* Read more / less */}
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-xs font-medium text-stone-600 hover:text-stone-900 underline-offset-2 hover:underline"
+        >
+          {expanded ? "Show less" : "Read more"}
+        </button>
+      )}
+
+      {/* Author + Tags */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase text-stone-600">
+          — {quote.author || "Unknown"}
         </span>
 
-        {quote.tags?.slice(0, 4).map((t) => {
-          const isActive = activeTags.includes(t);
-
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => onToggleTag(t)}
-              className={`
-                text-[10px] sm:text-[11px]
-                px-2 py-0.5 rounded-full font-serif border
-                transition
-                ${
-                  isActive
-                    ? "border-stone-700 bg-stone-800 text-amber-50"
-                    : "border-stone-300 bg-white/80 text-stone-800 hover:border-stone-400"
-                }
-              `}
-            >
-              {t}
-            </button>
-          );
-        })}
-
-        {onToggleSave && (
-          <button
-            type="button"
-            onClick={onToggleSave}
-            aria-pressed={!!isSaved}
-            className="
-              ml-auto inline-flex items-center justify-center
-              rounded-full border border-stone-300
-              px-2 py-1 text-[11px] font-serif
-              bg-white/80 hover:bg-stone-800 hover:text-amber-50
-              transition
-            "
-          >
-            {buttonLabel}
-          </button>
+        {quote.tags && quote.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 justify-end">
+            {quote.tags.slice(0, 3).map((tag) => {
+              const active = activeTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => handleToggleTag(e, tag)}
+                  className={`
+                    rounded-full border px-2.5 py-0.5 text-[0.7rem] sm:text-[0.72rem]
+                    font-medium tracking-wide transition
+                    ${
+                      active
+                        ? "bg-emerald-600 border-emerald-600 text-emerald-50"
+                        : "bg-white/80 border-stone-200 text-stone-600 hover:bg-stone-50"
+                    }
+                  `}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </motion.article>
   );
 }
-
-export default QuoteCard;
-export { QuoteCard };
