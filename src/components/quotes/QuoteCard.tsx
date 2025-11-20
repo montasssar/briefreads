@@ -7,6 +7,11 @@ interface Props {
   quote: Quote;
   isSaved: boolean;
   onToggleSave: (quote: Quote) => void;
+
+  // optional extras used by some parents (Home, Saved page, etc.)
+  index?: number;
+  activeTags?: string[];
+  onToggleTag?: (tag: string) => void;
 }
 
 export default function QuoteCard({
