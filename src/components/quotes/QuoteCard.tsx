@@ -1,135 +1,121 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import type { Quote } from "@/types/quote";
 
-interface QuoteCardProps {
+interface Props {
   quote: Quote;
-  index?: number;
-  activeTags: string[];
-  onToggleTag: (tag: string) => void;
   isSaved: boolean;
-  onToggleSave: () => void;
+  onToggleSave: (quote: Quote) => void;
 }
-
-const MAX_CHARS = 220;
 
 export default function QuoteCard({
   quote,
-  index = 0,
-  activeTags,
-  onToggleTag,
   isSaved,
   onToggleSave,
-}: QuoteCardProps) {
+}: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
-  const delay = Math.min(0.02 * index, 0.4);
+  const toggleExpanded = () => setExpanded(!expanded);
 
-  const isLong = (quote.text ?? "").length > MAX_CHARS;
+  const handleSaveClick = () => {
+    onToggleSave(quote);
 
-  const displayText =
-    expanded || !isLong
-      ? quote.text
-      : `${quote.text.slice(0, MAX_CHARS).trimEnd()}…`;
-
-  const handleToggleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleSave();
+    // Trigger micro animation only when going from unsaved → saved
+    if (!isSaved) {
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 600); // match shortPing duration
+    }
   };
 
-  const handleToggleTag = (e: React.MouseEvent, tag: string) => {
-    e.stopPropagation();
-    onToggleTag(tag);
-  };
+  const displayedText =
+    quote.text.length > 220 && !expanded
+      ? quote.text.slice(0, 220) + "…"
+      : quote.text;
 
   return (
-    <motion.article
-      initial={{ y: 8, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.35, delay }}
+    <article
       className="
-        group relative h-full
-        rounded-2xl border border-stone-200/80
-        bg-[radial-gradient(circle_at_top,#fffbf5,#f5efe6)]
-        p-4 sm:p-5
-        shadow-[0_12px_30px_rgba(15,23,42,0.06)]
-        hover:shadow-[0_16px_40px_rgba(15,23,42,0.11)]
-        transition-shadow
+        relative rounded-xl border border-gray-200 
+        bg-[#faf5ef] p-5 shadow-sm 
+        transition-all
       "
     >
-      {/* Save button */}
+      {/* STAR SAVE BUTTON (smaller bubble + short pulse + spin) */}
       <button
-        type="button"
-        onClick={handleToggleSave}
-        className={`
-          absolute right-3 top-3
-          inline-flex h-8 w-8 items-center justify-center
-          rounded-full border text-xs font-medium
-          transition
-          ${
-            isSaved
-              ? "bg-amber-500 border-amber-500 text-white shadow-sm"
-              : "bg-white/80 border-stone-200 text-stone-600 hover:bg-amber-50"
-          }
-        `}
-        aria-pressed={isSaved}
+        onClick={handleSaveClick}
         aria-label={isSaved ? "Unsave quote" : "Save quote"}
+        className="
+          absolute top-3 right-3
+          flex items-center justify-center
+          w-6 h-6 rounded-full
+          bg-white/40 backdrop-blur-sm
+          text-gray-600 hover:text-yellow-600
+          shadow-sm hover:shadow 
+          transition-all transform hover:scale-110
+        "
       >
-        {isSaved ? "★" : "☆"}
+        {/* Short pulse ring */}
+        {justSaved && (
+          <span
+            className="
+              absolute inline-flex h-full w-full rounded-full
+              border border-yellow-400/70
+              opacity-70
+              animate-shortPing
+            "
+          />
+        )}
+
+        {/* Star (spins briefly when justSaved is true) */}
+        <span
+          className={
+            "relative text-sm leading-none " +
+            (justSaved ? "animate-starSpin" : "")
+          }
+        >
+          {isSaved ? "★" : "☆"}
+        </span>
       </button>
 
-      {/* Quote text */}
-      <p className="text-[0.98rem] sm:text-[1.02rem] leading-relaxed font-serif text-stone-900">
-        <span className="text-lg mr-0.5 align-top text-stone-400">“</span>
-        {displayText}
-        <span className="text-lg ml-0.5 align-bottom text-stone-400">”</span>
+      {/* QUOTE TEXT */}
+      <p className="text-base leading-relaxed mb-3">
+        “{displayedText}”
       </p>
 
-      {/* Read more / less */}
-      {isLong && (
+      {/* READ MORE */}
+      {quote.text.length > 220 && (
         <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-xs font-medium text-stone-600 hover:text-stone-900 underline-offset-2 hover:underline"
+          onClick={toggleExpanded}
+          className="text-sm text-gray-500 hover:text-gray-700 transition-all"
         >
           {expanded ? "Show less" : "Read more"}
         </button>
       )}
 
-      {/* Author + Tags */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase text-stone-600">
-          — {quote.author || "Unknown"}
-        </span>
+      {/* AUTHOR */}
+      <p className="mt-4 text-sm font-medium text-gray-800 uppercase tracking-wide">
+        — {quote.author}
+      </p>
 
-        {quote.tags && quote.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 justify-end">
-            {quote.tags.slice(0, 3).map((tag) => {
-              const active = activeTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={(e) => handleToggleTag(e, tag)}
-                  className={`
-                    rounded-full border px-2.5 py-0.5 text-[0.7rem] sm:text-[0.72rem]
-                    font-medium tracking-wide transition
-                    ${
-                      active
-                        ? "bg-emerald-600 border-emerald-600 text-emerald-50"
-                        : "bg-white/80 border-stone-200 text-stone-600 hover:bg-stone-50"
-                    }
-                  `}
-                >
-                  #{tag}
-                </button>
-              );
-            })}
-          </div>
-        )}
+      {/* TAGS */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {quote.tags?.slice(0, 4).map((tag) => (
+          <span
+            key={tag}
+            className="
+              px-3 py-1 rounded-full
+              text-xs font-medium
+              bg-white/60 backdrop-blur
+              text-gray-700 border border-gray-300
+              shadow-sm
+            "
+          >
+            #{tag}
+          </span>
+        ))}
       </div>
-    </motion.article>
+    </article>
   );
 }
