@@ -14,7 +14,9 @@ export default function Navbar() {
   const searchParams = useSearchParams();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [authorQuery, setAuthorQuery] = useState(() => searchParams.get("author") ?? "");
+  const [authorQuery, setAuthorQuery] = useState(
+    () => searchParams.get("author") ?? ""
+  );
   const [scrolled, setScrolled] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,14 +102,16 @@ export default function Navbar() {
       `}
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        
         {/* LEFT: Logo */}
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white shadow-sm">
             <span className="text-lg">💭</span>
           </div>
           <div className="leading-tight">
-            <Link href="/" className="text-lg font-semibold tracking-tight text-neutral-900">
+            <Link
+              href="/"
+              className="text-lg font-semibold tracking-tight text-neutral-900"
+            >
               BriefReads
             </Link>
             <p className="text-[0.65rem] uppercase tracking-[0.25em] text-neutral-500">
@@ -118,7 +122,6 @@ export default function Navbar() {
 
         {/* MIDDLE: OpenLibrary + Search */}
         <div className="flex flex-1 flex-col gap-2 sm:max-w-xl sm:flex-row sm:items-center sm:justify-center">
-
           {/* OpenLibrary visible on all devices */}
           <a
             href="https://openlibrary.org"
@@ -158,7 +161,10 @@ export default function Navbar() {
         </div>
 
         {/* RIGHT: Auth + Menu */}
-        <div ref={menuRef} className="relative flex items-center justify-end gap-2 sm:gap-3">
+        <div
+          ref={menuRef}
+          className="relative flex items-center justify-end gap-2 sm:gap-3"
+        >
           {!userName ? (
             <button
               onClick={handleSignIn}
@@ -169,7 +175,9 @@ export default function Navbar() {
           ) : (
             <>
               <div className="hidden sm:flex items-center gap-2">
-                <span className="text-sm font-medium text-neutral-900">{userName}</span>
+                <span className="text-sm font-medium text-neutral-900">
+                  {userName}
+                </span>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white">
                   {userInitial}
                 </div>
@@ -194,9 +202,27 @@ export default function Navbar() {
 
           {menuOpen && (
             <div className="absolute right-0 top-11 w-44 rounded-xl border border-neutral-200 bg-white/95 py-2 text-sm shadow-lg">
-              <Link href="/saved" className="block px-3 py-1.5 hover:bg-neutral-100" onClick={() => setMenuOpen(false)}>Saved quotes</Link>
-              <Link href="/poems" className="block px-3 py-1.5 hover:bg-neutral-100" onClick={() => setMenuOpen(false)}>Poems</Link>
-              <Link href="/about" className="block px-3 py-1.5 hover:bg-neutral-100" onClick={() => setMenuOpen(false)}>About BriefReads</Link>
+              <Link
+                href="/saved"
+                className="block px-3 py-1.5 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                Saved quotes
+              </Link>
+              <Link
+                href="/poems"
+                className="block px-3 py-1.5 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                Poems
+              </Link>
+              <Link
+                href="/about"
+                className="block px-3 py-1.5 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                About BriefReads
+              </Link>
             </div>
           )}
         </div>

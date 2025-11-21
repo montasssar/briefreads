@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className="
           min-h-screen
-          bg-linear-to-b from-[#fdf7ec] to-[#f1ebdd]
+          bg-gradient-to-b from-[#fdf7ec] to-[#f1ebdd]
           text-stone-900
           antialiased
         "
@@ -25,8 +25,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <Suspense fallback={null}>
             <Navbar />
-            {/* Added padding-top because navbar is fixed */}
-            <main className="pt-24 pb-10">{children}</main>
+
+            {/* Add top padding to keep content below fixed navbar */}
+            <main className="mx-auto max-w-6xl px-4 pt-28 pb-10">
+              {children}
+            </main>
           </Suspense>
         </AuthProvider>
       </body>
