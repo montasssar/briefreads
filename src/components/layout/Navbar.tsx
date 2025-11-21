@@ -76,8 +76,12 @@ export default function Navbar() {
         </Link>
 
         {/* Right side cluster */}
-        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
-
+        <div
+          className="
+            flex flex-wrap items-center justify-end
+            gap-2 sm:gap-3 max-w-full
+          "
+        >
           {/* OpenLibrary */}
           <a
             href="https://openlibrary.org/"
@@ -89,7 +93,7 @@ export default function Navbar() {
               bg-white/90 px-3 py-1.5
               text-[11px] sm:text-xs font-serif text-stone-800
               shadow-sm hover:bg-white hover:-translate-y-px
-              transition
+              transition shrink-0
             "
           >
             <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(251,191,36,0.3)]" />
@@ -97,8 +101,8 @@ export default function Navbar() {
             <ExternalLink className="h-3 w-3 opacity-70" />
           </a>
 
-          {/* Author Filter */}
-          <div className="hidden sm:block flex-1 max-w-xs lg:max-w-sm">
+          {/* Author Filter (desktop+) */}
+          <div className="hidden sm:block flex-1 min-w-[140px] max-w-xs lg:max-w-sm">
             <div className="relative">
               <input
                 value={author ?? ""}
@@ -133,7 +137,7 @@ export default function Navbar() {
 
           {/* Auth */}
           {user ? (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="hidden sm:flex flex-col items-end leading-tight">
                 <span className="text-[11px] font-serif text-stone-500">
                   Signed in as
@@ -172,7 +176,7 @@ export default function Navbar() {
                 bg-stone-900 px-3.5 py-1.5
                 text-[11px] sm:text-xs font-serif text-stone-50
                 shadow-sm hover:bg-stone-800 hover:-translate-y-px
-                transition
+                transition shrink-0
               "
             >
               <LogIn className="h-3.5 w-3.5" />
@@ -187,8 +191,9 @@ export default function Navbar() {
               inline-flex h-9 w-9 items-center justify-center
               rounded-full border border-stone-300 bg-white/90
               text-stone-800 shadow-sm hover:bg-white hover:-translate-y-px
-              transition
+              transition shrink-0
             "
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
             {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
