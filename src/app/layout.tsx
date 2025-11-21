@@ -26,8 +26,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Suspense fallback={null}>
             <Navbar />
 
-            {/* Add top padding to keep content below fixed navbar */}
-            <main className="mx-auto max-w-6xl px-4 pt-28 pb-10">
+            {/* Extra padding on small screens so content never sits under fixed navbar */}
+            <main className="mx-auto max-w-6xl px-4 pt-36 sm:pt-32 md:pt-28 pb-10">
               {children}
             </main>
           </Suspense>
