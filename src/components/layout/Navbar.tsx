@@ -1,246 +1,204 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Feather,
-  Menu,
-  X,
-  LogIn,
-  LogOut,
-  ExternalLink,
-  XCircle,
-} from "lucide-react";
-import { useFilters } from "@/hooks/useFilters";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Menu, LogOut, ExternalLink, Search } from "lucide-react";
+import { useAuth } from "@/context/AuthContext"; // adjust path if needed
+import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
 
 export default function Navbar() {
-  const { author, setAuthor } = useFilters();
-  const { user, signInWithGoogle, signOutUser } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, signInWithGoogle } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const userInitial =
-    user?.displayName?.[0]?.toUpperCase() ??
-    user?.email?.[0]?.toUpperCase() ??
-    "";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [authorQuery, setAuthorQuery] = useState(
+    () => searchParams.get("author") ?? ""
+  );
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isHome = pathname === "/" || pathname === "/briefreads";
+
+  // Firebase user
+  const userName = user?.displayName || user?.email || null;
+  const userInitial = userName?.charAt(0).toUpperCase() ?? "M";
+
+  // ---------- URL update for live author search ----------
+  const updateAuthorInUrl = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (value.trim()) {
+      params.set("author", value.trim());
+    } else {
+      params.delete("author");
+    }
+
+    const qs = params.toString();
+    const targetPath = pathname || "/";
+
+    // replace() so typing doesn't spam browser history
+    router.replace(qs ? `${targetPath}?${qs}` : targetPath);
+  };
+
+  const handleAuthorChange = (value: string) => {
+    setAuthorQuery(value);
+
+    // debounce URL updates a bit so it's smooth
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      updateAuthorInUrl(value);
+    }, 300);
+  };
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
     } catch (err) {
-      console.error("Sign in failed", err);
+      console.error("Google sign-in failed:", err);
     }
   };
 
   const handleSignOut = async () => {
     try {
-      await signOutUser();
+      const auth = getAuth();
+      await firebaseSignOut(auth);
+      setMenuOpen(false);
     } catch (err) {
-      console.error("Sign out failed", err);
+      console.error("Sign-out failed:", err);
     }
   };
 
   return (
-    <motion.header
-      initial={{ y: -8, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="
-        sticky top-0 z-50
-        border-b border-stone-200/80
-        bg-[rgba(253,247,236,0.9)]
-        backdrop-blur
-        shadow-[0_6px_12px_rgba(15,23,42,0.06)]
-      "
-    >
-      {/* Main bar */}
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3">
-        {/* Brand */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:-translate-y-px transition"
-        >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white/90 shadow-sm">
-            <Feather className="h-4 w-4 text-stone-800" />
-          </span>
-
-          <span className="hidden sm:flex flex-col leading-tight">
-            <span className="font-serif text-sm sm:text-base font-semibold tracking-tight text-stone-900">
+    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-[#F8F3E9]/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* LEFT: Logo + tagline */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white shadow-sm">
+            <span className="text-lg">✒️</span>
+          </div>
+          <div className="leading-tight">
+            <Link
+              href="/"
+              className="text-lg font-semibold tracking-tight text-neutral-900"
+            >
               BriefReads
-            </span>
-            <span className="text-[11px] text-stone-600 font-serif">
-              YOUR WARM HOME OF WORDS
-            </span>
-          </span>
-        </Link>
+            </Link>
+            <p className="text-[0.65rem] uppercase tracking-[0.25em] text-neutral-500">
+              Your warm home of words
+            </p>
+          </div>
+        </div>
 
-        {/* Right side cluster */}
-        <div
-          className="
-            flex flex-wrap items-center justify-end
-            gap-2 sm:gap-3 max-w-full
-          "
-        >
-          {/* OpenLibrary */}
+        {/* MIDDLE: OpenLibrary + author search */}
+        <div className="flex flex-1 flex-col gap-2 sm:max-w-xl sm:flex-row sm:items-center sm:justify-center">
+          {/* OpenLibrary badge – hidden on very small screens */}
           <a
-            href="https://openlibrary.org/"
+            href="https://openlibrary.org"
             target="_blank"
             rel="noreferrer"
-            className="
-              hidden sm:inline-flex items-center gap-1.5
-              rounded-full border border-stone-300
-              bg-white/90 px-3 py-1.5
-              text-[11px] sm:text-xs font-serif text-stone-800
-              shadow-sm hover:bg-white hover:-translate-y-px
-              transition shrink-0
-            "
+            className="hidden items-center justify-center gap-2 rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-xs font-medium text-amber-800 shadow-sm md:inline-flex"
           >
-            <span className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(251,191,36,0.3)]" />
-            <span>OpenLibrary</span>
-            <ExternalLink className="h-3 w-3 opacity-70" />
+            <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+            OpenLibrary
+            <ExternalLink className="h-3 w-3" />
           </a>
 
-          {/* Author Filter (desktop+) */}
-          <div className="hidden sm:block flex-1 min-w-[140px] max-w-xs lg:max-w-sm">
-            <div className="relative">
-              <input
-                value={author ?? ""}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Author..."
-                className="
-                  w-full rounded-full border border-stone-300/90
-                  bg-white/90 px-3.5 py-1.5 pr-8
-                  text-xs sm:text-sm font-serif text-stone-800
-                  placeholder:text-stone-400
-                  shadow-sm focus:outline-none focus:ring-2 focus:ring-stone-400/40
-                "
-              />
-
-              {author && (
-                <button
-                  type="button"
-                  onClick={() => setAuthor("")}
-                  className="
-                    absolute right-2 top-1/2 -translate-y-1/2
-                    inline-flex h-5 w-5 items-center justify-center
-                    rounded-full bg-stone-100 text-stone-500
-                    hover:bg-stone-200 hover:text-stone-800
-                    transition
-                  "
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Auth */}
-          {user ? (
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className="hidden sm:flex flex-col items-end leading-tight">
-                <span className="text-[11px] font-serif text-stone-500">
-                  Signed in as
-                </span>
-                <span className="text-xs font-serif text-stone-800">
-                  {user.displayName ?? user.email}
-                </span>
+          {/* Author-only search – only on home page */}
+          {isHome && (
+            <div className="w-full flex items-center justify-center">
+              <div className="flex w-full max-w-[420px] items-center rounded-full border border-neutral-200 bg-white/90 px-3 shadow-sm focus-within:border-neutral-400 focus-within:ring-1 focus-within:ring-neutral-300">
+                <Search className="mr-2 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  value={authorQuery}
+                  onChange={(e) => handleAuthorChange(e.target.value)}
+                  placeholder="Author… e.g. Rumi"
+                  className="flex-1 border-none bg-transparent py-2 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                />
               </div>
+            </div>
+          )}
+        </div>
 
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-stone-50 shadow-sm">
-                {userInitial}
+        {/* RIGHT: user info + auth + menu */}
+        <div className="relative flex items-center justify-end gap-2 sm:gap-3">
+          {userName ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="hidden text-xs text-neutral-600 sm:inline">
+                Signed in as
               </span>
-
-              <button
-                onClick={handleSignOut}
-                className="
-                  hidden sm:inline-flex items-center gap-1.5
-                  rounded-full border border-stone-300
-                  bg-white/90 px-3 py-1.5
-                  text-[11px] sm:text-xs font-serif text-stone-900
-                  shadow-sm hover:bg-stone-900 hover:text-stone-50
-                  hover:-translate-y-px transition
-                "
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Sign out</span>
-              </button>
+              <span className="hidden text-sm font-medium text-neutral-900 sm:inline">
+                {userName}
+              </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white">
+                {userInitial}
+              </div>
             </div>
           ) : (
             <button
               type="button"
               onClick={handleSignIn}
-              className="
-                inline-flex items-center gap-1.5
-                rounded-full border border-stone-800
-                bg-stone-900 px-3.5 py-1.5
-                text-[11px] sm:text-xs font-serif text-stone-50
-                shadow-sm hover:bg-stone-800 hover:-translate-y-px
-                transition shrink-0
-              "
+              className="rounded-full border border-neutral-300 bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-800 shadow-sm"
             >
-              <LogIn className="h-3.5 w-3.5" />
-              <span>Sign in</span>
+              Sign in
             </button>
           )}
 
-          {/* Menu Button */}
+          {userName && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex items-center gap-1 rounded-full border border-neutral-300 bg-white/90 px-2.5 py-1.5 text-xs font-medium text-neutral-800 shadow-sm"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          )}
+
+          {/* Menu button */}
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="
-              inline-flex h-9 w-9 items-center justify-center
-              rounded-full border border-stone-300 bg-white/90
-              text-stone-800 shadow-sm hover:bg-white hover:-translate-y-px
-              transition shrink-0
-            "
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            type="button"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-300 bg-white/90 shadow-sm"
+            aria-label="Open menu"
           >
-            {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            <Menu className="h-5 w-5" />
           </button>
-        </div>
-      </div>
 
-      {/* Dropdown Menu */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.nav
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="border-t border-stone-200/80 bg-[rgba(253,247,236,0.96)] backdrop-blur-sm"
-          >
-            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-4 px-3 py-3 sm:px-4">
+          {/* Dropdown menu with Saved, Poems, About */}
+          {menuOpen && (
+            <div className="absolute right-0 top-11 w-44 rounded-xl border border-neutral-200 bg-white/95 py-2 text-sm shadow-lg">
               <Link
-                href="/about"
+                href="/saved"
+                className="block px-3 py-1.5 text-neutral-800 hover:bg-neutral-100"
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
-              >
-                About
-              </Link>
-
-              <Link
-                href="/poems"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
-              >
-                Poems
-              </Link>
-
-              <Link
-                href="/saved-quotes"
-                onClick={() => setMenuOpen(false)}
-                className="text-sm font-serif text-stone-800 hover:underline underline-offset-4"
               >
                 Saved quotes
               </Link>
+              <Link
+                href="/poems"
+                className="block px-3 py-1.5 text-neutral-800 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                Poems
+              </Link>
+              <Link
+                href="/about"
+                className="block px-3 py-1.5 text-neutral-800 hover:bg-neutral-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                About BriefReads
+              </Link>
             </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-
-      {/* Soft separator */}
-      <div className="h-px w-full bg-linear-to-r from-transparent via-stone-300/70 to-transparent" />
-    </motion.header>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }
