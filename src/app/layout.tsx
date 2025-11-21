@@ -25,7 +25,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <Suspense fallback={null}>
             <Navbar />
-            <main className="pb-10">{children}</main>
+            {/* Added padding-top because navbar is fixed */}
+            <main className="pt-24 pb-10">{children}</main>
           </Suspense>
         </AuthProvider>
       </body>

@@ -97,12 +97,12 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-[#F8F3E9]/95 backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-neutral-200 bg-[#F8F3E9]/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         {/* LEFT: Logo + tagline */}
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 bg-white shadow-sm">
-            <span className="text-lg">✒️</span>
+            <span className="text-lg">💭</span>
           </div>
           <div className="leading-tight">
             <Link
