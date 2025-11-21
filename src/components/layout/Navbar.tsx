@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Menu, LogOut, ExternalLink, Search } from "lucide-react";
+import { Menu, LogOut, ExternalLink, Search, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext"; // adjust path if needed
 import { getAuth, signOut as firebaseSignOut } from "firebase/auth";
 
@@ -19,12 +19,30 @@ export default function Navbar() {
   );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const isHome = pathname === "/" || pathname === "/briefreads";
 
   // Firebase user
   const userName = user?.displayName || user?.email || null;
   const userInitial = userName?.charAt(0).toUpperCase() ?? "M";
+
+  // ---------- Close menu on outside click ----------
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
 
   // ---------- URL update for live author search ----------
   const updateAuthorInUrl = (value: string) => {
@@ -46,7 +64,6 @@ export default function Navbar() {
   const handleAuthorChange = (value: string) => {
     setAuthorQuery(value);
 
-    // debounce URL updates a bit so it's smooth
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
@@ -54,6 +71,11 @@ export default function Navbar() {
     debounceRef.current = setTimeout(() => {
       updateAuthorInUrl(value);
     }, 300);
+  };
+
+  const handleClearAuthor = () => {
+    setAuthorQuery("");
+    updateAuthorInUrl("");
   };
 
   const handleSignIn = async () => {
@@ -121,13 +143,26 @@ export default function Navbar() {
                   placeholder="Author… e.g. Rumi"
                   className="flex-1 border-none bg-transparent py-2 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
                 />
+                {authorQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearAuthor}
+                    className="ml-1 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+                    aria-label="Clear author"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
 
         {/* RIGHT: user info + auth + menu */}
-        <div className="relative flex items-center justify-end gap-2 sm:gap-3">
+        <div
+          ref={menuRef}
+          className="relative flex items-center justify-end gap-2 sm:gap-3"
+        >
           {userName ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="hidden text-xs text-neutral-600 sm:inline">
